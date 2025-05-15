@@ -44,7 +44,7 @@ poetry add rpi-stt-tts-shell
 
 ### 3. Z repozytorium
 ```bash
-git clone https://github.com/user/rpi-stt-tts-shell.git
+git clone https://github.com/movatalk/rpi-stt-tts-shell.git
 cd rpi-stt-tts-shell
 make install  # lub: poetry install
 ```
