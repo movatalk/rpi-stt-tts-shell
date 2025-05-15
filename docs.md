@@ -1,5 +1,8 @@
 # Dokumentacja pakietu rpi-stt-tts-shell
-
+<!--
+Author: tom-sapletta-com
+Purpose: development setup instructions for the project.
+-->
 ## Wprowadzenie
 
 `rpi-stt-tts-shell` to wszechstronny pakiet oferujący funkcje rozpoznawania mowy (STT - Speech to Text) i syntezowania mowy (TTS - Text to Speech) specjalnie zaprojektowany dla urządzeń Raspberry Pi. Pakiet umożliwia stworzenie interaktywnego asystenta głosowego zdolnego do sterowania urządzeniami IoT, odczytywania danych z czujników oraz reagowania na polecenia głosowe użytkownika.

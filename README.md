@@ -460,3 +460,8 @@ Wkłady w projekt są mile widziane. Proszę zapoznać się z wytycznymi dotycz�
 ## Autorzy
 
 - Tom Sapletta
+
+<!--
+Author: tom-sapletta-com
+Purpose: development setup instructions for the project.
+-->

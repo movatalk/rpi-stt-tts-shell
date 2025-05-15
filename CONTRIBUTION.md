@@ -1,4 +1,8 @@
 # Contributing to rpi-stt-tts-shell
+<!--
+Author: tom-sapletta-com
+Purpose: Contribution guidelines and development setup instructions for the project.
+-->
 
 This document provides guidelines and instructions for developers who want to contribute to this project.
 
@@ -110,7 +114,7 @@ poetry publish -r moje-repo
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/rpi-stt-tts-shell.git
+   git clone https://github.com/movatalk/rpi-stt-tts-shell.git
    cd rpi-stt-tts-shell
    ```
 
