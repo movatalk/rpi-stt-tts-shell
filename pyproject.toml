@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "rpi_stt_tts_shell"
-version = "0.3.0"
+version = "0.4.0"
 description = "Biblioteka STT i TTS dla Raspberry Pi"
 authors = ["Tom Sapletta <info@softreck.com>"]
 readme = "README.md"

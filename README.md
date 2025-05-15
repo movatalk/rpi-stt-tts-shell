@@ -219,7 +219,72 @@ Konfiguracja znajduje się w pliku `config.json`:
 }
 ```
 
+
 ## 🚀 Użycie
+
+# rpi-stt-tts-shell
+
+Kompleksowe rozwiązanie do rozpoznawania mowy (STT - Speech to Text) i syntezy mowy (TTS - Text to Speech) dla urządzeń Raspberry Pi oraz Radxa.
+
+## Wprowadzenie
+
+`rpi-stt-tts-shell` to pakiet umożliwiający stworzenie interaktywnego asystenta głosowego zdolnego do sterowania urządzeniami IoT, odczytywania danych z czujników oraz reagowania na polecenia głosowe użytkownika. Projekt jest zoptymalizowany pod kątem działania na urządzeniach Raspberry Pi oraz Radxa.
+
+## Funkcje
+
+- Rozpoznawanie mowy (STT) z wykorzystaniem różnych silników
+- Synteza mowy (TTS) z obsługą wielu języków
+- Kontrola urządzeń poprzez GPIO
+- Odczyt danych z czujników (temperatura, wilgotność)
+- Narzędzia do zarządzania flotą urządzeń Raspberry Pi i Radxa
+- Automatyczne wykrywanie urządzeń w sieci lokalnej
+- Wdrażanie projektu na wielu urządzeniach jednocześnie
+
+## Wymagania systemowe
+
+### Sprzęt
+- Raspberry Pi (3B+, 4, Zero 2W) lub Radxa (Zero 3W)
+- Mikrofon USB lub HAT mikrofonowy (np. ReSpeaker)
+- Głośnik (wyjście audio 3.5mm, HDMI, USB lub Bluetooth)
+- Opcjonalnie: czujniki (DHT22, BME280), diody LED, przekaźniki
+
+### Oprogramowanie
+- Raspberry Pi OS / Debian / Ubuntu
+- Python 3.7+
+- Pakiety: portaudio, alsa-utils, espeak/espeak-ng
+
+## Szybki start
+
+1. Sklonuj repozytorium:
+```bash
+git clone https://github.com/movatalk/rpi-stt-tts-shell.git
+cd rpi-stt-tts-shell
+```
+
+2. Uruchom menu główne:
+```bash
+./bin/menu.sh
+```
+
+3. Wybierz opcję, aby:
+   - Skanować sieć w poszukiwaniu urządzeń
+   - Wdrożyć projekt na znalezione urządzenia
+   - Skonfigurować urządzenia
+   - Połączyć się z urządzeniami przez SSH
+
+## Struktura projektu
+
+- `bin/` - Skrypty wykonywalne, w tym główne menu
+- `fleet/` - Narzędzia do zarządzania flotą urządzeń
+- `ssh/` - Narzędzia do zarządzania konfiguracjami SSH
+- `rpi/` - Skrypty specyficzne dla Raspberry Pi
+- `zero3w/` - Skrypty specyficzne dla Radxa Zero 3W
+- `docs/` - Dokumentacja projektu
+- `src/` - Kod źródłowy asystenta głosowego
+
+## Dokumentacja
+
+Szczegółowa dokumentacja znajduje się w katalogu `docs/`. Każdy katalog w projekcie zawiera również własny plik README z instrukcjami dotyczącymi danego komponentu.
 
 ### Podstawowa obsługa
 

@@ -1,4 +1,6 @@
-# konfiguracja dla RADXA ZERO 3W
+# Konfiguracja i instalacja dla Radxa ZERO 3W/3E
+Ten katalog zawiera skrypty do konfiguracji i instalacji oprogramowania na urządzeniach Radxa ZERO 3W/3E,
+z uwzględnieniem specyfiki tych urządzeń.
 
 + [ZERO 3 - Radxa Docs](https://docs.radxa.com/zero/zero3)
 
@@ -9,7 +11,7 @@ Product Description
 
 -   The Radxa ZERO 3W/3E is an ultra-small, high-performance single board computer based on the Rockchip RK3566, with a compact form factor and rich interfaces.
 -   Tailored for a diverse user base including manufacturers, IoT developers, hobbyists, and PC DIY enthusiasts, the Radxa ZERO 3W/3E is an ultra-small, versatile platform that can be used for a wide variety of applications, including IoT devices, machine learning edge computing, home automation, education, and entertainment.
--   The ZERO 3W and ZERO 3E are basically the same size and model, but differ only in storage and network interfaces. For details, please refer to the Features section of this article.
+-   The ZERO 3W and ZERO 3E are basically the samae size and model, but differ only in storage and network interfaces. For details, please refer to the Features section of this article.
 
 ### Physical Photos
 
@@ -47,441 +49,20 @@ Product Description
 | **Power** | Requires 5V/2A power adapter | Requires 5V/2A power adapter |
 | **Size** | 65mm x 30mm | 65mm x 30mm |
 
-## RPI vs RADXA:
-
-| Feature | Radxa ZERO 3W | Raspberry Pi Zero 2 W |
-|---------|--------------|----------------------|
-| **SoC** | Rockchip RK3566 | Broadcom BCM2710A1 |
-| **CPU** | Quad-core Cortex-A55, up to 1.6GHz | Quad-core Cortex-A53, up to 1.0GHz |
-| **GPU** | Arm Mali™‑G52‑2EE | Broadcom VideoCore IV |
-| **GPU Support** | OpenGL® ES1.1/2.0/3.2, Vulkan® 1.1, OpenCL™ 2.0 | OpenGL ES 2.0 |
-| **RAM** | 1/2/4/8 GB LPDDR4 | 512MB LPDDR2 |
-| **Storage** | eMMC on Board: 0/8/16/32/64 GB <br> microSD Card | microSD Card |
-| **Display** | Micro HDMI Interface: Supports 1080p60 output | Mini HDMI Interface |
-| **Ethernet** | Gigabit Ethernet, Supports POE (POE requires additional optional HAT) | No built-in Ethernet |
-| **Wireless** | Wi-Fi 6 (802.11 b/g/n) <br> BT 5.0 with BLE | Wi-Fi 4 (802.11 b/g/n) <br> BT 4.2 with BLE |
-| **USB** | - USB 2.0 Type-C OTG x1 <br> - USB 3.0 Type-C HOST x1 | Micro USB 2.0 OTG |
-| **Camera** | 1x4 lane MIPI CSI | CSI connector |
-| **Other Interfaces** | 40 Pin extends Header | 40-pin GPIO header |
-| **Power** | Requires 5V/2A power adapter | Micro USB 5V power |
-| **Size** | 65mm x 30mm | 65mm x 30mm |
-| **Notable Differences** | More modern SoC <br> Higher RAM options <br> Wi-Fi 6 support <br> Better USB interfaces | Lower specs <br> Smaller ecosystem <br> More affordable <br> Simpler power management |
-
-
-
-
-# ReSpeaker Compatibility with Radxa ZERO 3W
-
-## Compatibility Analysis
-
-ReSpeaker is a series of microphone array HATs (Hardware Attached on Top) designed primarily for Raspberry Pi. Compatibility with Radxa ZERO 3W depends on several factors:
-
-### Hardware Compatibility Considerations
-1. **GPIO Header**: 
-   - Radxa ZERO 3W has a 40-pin GPIO header
-   - ReSpeaker HATs are designed for 40-pin Raspberry Pi GPIO headers
-   - **Physical Compatibility: ✓ Likely Compatible**
-
-2. **Software Support**:
-   - ReSpeaker HATs typically use I2C and I2S interfaces
-   - These interfaces are standard on most single-board computers
-   - Requires proper device tree overlay and driver support
-
-### Potential Challenges
-- Different Linux distributions
-- Specific kernel module requirements
-- Audio driver compatibility
-
-### Recommended ReSpeaker Models for Radxa ZERO 3W
-1. **ReSpeaker 2-Mic Pi HAT**
-2. **ReSpeaker 4-Mic Array**
-3. **ReSpeaker Mic Array v2.0**
-
-## Implementation Steps
-1. Verify GPIO pin mapping
-2. Install necessary device tree overlays
-3. Configure audio drivers
-4. Install ReSpeaker-specific software
-
-### Potential Workarounds
-- Use generic ALSA/ASOUND configuration
-- Modify existing Raspberry Pi device tree overlays
-- Compile custom kernel modules
-
-## Recommendation
-- **Verify Compatibility Thoroughly**
-- Check Radxa's official documentation
-- Contact Radxa support for specific ReSpeaker HAT compatibility
-- Be prepared to do some custom configuration
-
-## Alternative Solutions
-If direct compatibility proves challenging:
-- Use USB sound cards
-- Explore Radxa-specific microphone arrays
-- Consider software-based audio processing solutions
-
-## Conclusion
-**Possible ✓ but not Guaranteed**
-- Physical compatibility looks promising
-- Software support will require additional configuration
-- Recommend experimental approach with patience for troubleshooting
-
-
-# Dokumentacja pakietu rpi-stt-tts-shell
-
-## Wprowadzenie
-
-`rpi-stt-tts-shell` to wszechstronny pakiet oferujący funkcje rozpoznawania mowy (STT - Speech to Text) i syntezowania mowy (TTS - Text to Speech) specjalnie zaprojektowany dla urządzeń Raspberry Pi i Radxa. Pakiet umożliwia stworzenie interaktywnego asystenta głosowego zdolnego do sterowania urządzeniami IoT, odczytywania danych z czujników oraz reagowania na polecenia głosowe użytkownika.
-
-## Zawartość pakietu
-
-Pakiet zawiera następujące komponenty:
-
-1. **Główna biblioteka Python** - Zestaw modułów do rozpoznawania i syntezy mowy
-2. **Skrypt `scan.sh`** - Wykrywa urządzenia Raspberry Pi i Radxa w sieci lokalnej
-3. **Skrypt `deploy.sh`** - Wdraża projekt na wykryte urządzenia
-4. **Skrypt `test_script.sh`** - Testuje wdrożony projekt na zdalnych urządzeniach
-5. **Skrypt `setup_radxa_respeaker.sh`** - Konfiguruje Radxa z ReSpeaker 2-Mic Pi HAT
-6. **Makefile** - Automatyzuje zadania developerskie i wdrożeniowe
-
-## Wymagania systemowe
-
-### Sprzęt
-- Raspberry Pi (testowano na Raspberry Pi 3B+, 4 i Zero 2W) lub Radxa (ZERO 3W/3E)
-- Mikrofon USB lub HAT mikrofonowy (np. ReSpeaker 2-Mic Pi HAT)
-- Głośnik (wyjście audio 3.5mm, HDMI, USB lub Bluetooth)
-- Opcjonalnie: czujniki (DHT22, BME280), diody LED, przekaźniki, itp.
-
-### Oprogramowanie
-- Raspberry Pi OS / Radxa OS (Debian-based)
-- Python 3.7+
-- Pakiety systemowe: portaudio, alsa-utils, espeak/espeak-ng
-
-## Instalacja
-
-### 1. Przy użyciu pip
-```bash
-pip install rpi-stt-tts-shell
-```
-
-### 2. Przy użyciu Poetry
-```bash
-poetry add rpi-stt-tts-shell
-```
-
-### 3. Z repozytorium
-```bash
-git clone https://github.com/user/rpi-stt-tts-shell.git
-cd rpi-stt-tts-shell
-make install  # lub: poetry install
-```
-
-### 4. Wdrożenie na wielu urządzeniach
-
-Pakiet zawiera narzędzia do automatycznego wdrażania na wielu urządzeniach Raspberry Pi i Radxa:
-
-```bash
-# Skanowanie sieci w poszukiwaniu urządzeń
-make scan
-
-# Wdrożenie na wszystkie znalezione urządzenia
-make deploy
-```
-
-### 5. Konfiguracja Radxa z ReSpeaker
-
-Aby skonfigurować urządzenie Radxa ZERO 3W/3E z nakładką ReSpeaker 2-Mic Pi HAT:
-
-```bash
-make setup-radxa
-```
-
-lub bezpośrednio:
-
-```bash
-sudo ./setup_radxa_respeaker.sh
-```
-
-## Konfiguracja
-
-Konfiguracja znajduje się w pliku `config.json`:
-
-```json
-{
-  "stt": {
-    "engine": "pocketsphinx",
-    "language": "pl",
-    "threshold": 0.5,
-    "keyword": "komputer"
-  },
-  "tts": {
-    "engine": "espeak",
-    "language": "pl",
-    "rate": 150,
-    "volume": 0.8
-  },
-  "gpio": {
-    "light": 17,
-    "fan": 18,
-    "dht_sensor": 4
-  },
-  "logging": {
-    "enable": true,
-    "level": "INFO",
-    "file": "assistant.log"
-  }
-}
-```
-
-## Obsługiwane urządzenia
-
-Pakiet został zaprojektowany i przetestowany na następujących urządzeniach:
-
-### Raspberry Pi
-- Raspberry Pi 3B+
-- Raspberry Pi 4
-- Raspberry Pi Zero 2W
-
-### Radxa
-- Radxa ZERO 3W
-- Radxa ZERO 3E
-
-Inne podobne urządzenia oparte na ARM z systemem Linux również powinny działać, ale mogą wymagać dodatkowej konfiguracji.
-
-## Obsługiwane nakładki audio
-
-Pakiet obsługuje różne nakładki audio, ale został szczególnie zoptymalizowany pod kątem:
-
-- ReSpeaker 2-Mic Pi HAT
-- ReSpeaker 4-Mic Array
-- USB mikrofony i głośniki
-
-## Architektura pakietu
-
-```
-rpi-stt-tts-shell/
-├── rpi_stt_tts_shell/         # Pakiet główny
-│   ├── __init__.py
-│   ├── assistant.py           # Główny moduł asystenta
-│   ├── stt/                   # Moduły rozpoznawania mowy
-│   │   ├── __init__.py
-│   │   ├── pocketsphinx_engine.py
-│   │   ├── vosk_engine.py
-│   │   ├── whisper_engine.py
-│   │   └── google_engine.py
-│   ├── tts/                   # Moduły syntezy mowy
-│   │   ├── __init__.py
-│   │   ├── espeak_engine.py
-│   │   ├── piper_engine.py
-│   │   ├── festival_engine.py
-│   │   └── google_engine.py
-│   ├── gpio_controller.py     # Kontroler GPIO
-│   ├── sensors.py             # Obsługa czujników
-│   └── plugins/               # Wtyczki rozszerzające funkcjonalność
-│       ├── __init__.py
-│       ├── weather.py
-│       ├── timer.py
-│       └── music.py
-```# Dokumentacja pakietu rpi-stt-tts-shell
-
-## Wprowadzenie
-
-`rpi-stt-tts-shell` to wszechstronny pakiet oferujący funkcje rozpoznawania mowy (STT - Speech to Text) i syntezowania mowy (TTS - Text to Speech) specjalnie zaprojektowany dla urządzeń Raspberry Pi. Pakiet umożliwia stworzenie interaktywnego asystenta głosowego zdolnego do sterowania urządzeniami IoT, odczytywania danych z czujników oraz reagowania na polecenia głosowe użytkownika.
-
-## Zawartość pakietu
-
-Pakiet zawiera następujące komponenty:
-
-1. **Główna biblioteka Python** - Zestaw modułów do rozpoznawania i syntezy mowy
-2. **Skrypt `scan.sh`** - Wykrywa urządzenia Raspberry Pi w sieci lokalnej
-3. **Skrypt `deploy.sh`** - Wdraża projekt na wykryte urządzenia
-4. **Skrypt `test_script.sh`** - Testuje wdrożony projekt na zdalnych urządzeniach
-5. **Makefile** - Automatyzuje zadania developerskie i wdrożeniowe
-
-## Wymagania systemowe
-
-### Sprzęt
-- Raspberry Pi (testowano na Raspberry Pi 3B+, 4 i Zero 2W)
-- Mikrofon USB lub HAT mikrofonowy (np. ReSpeaker)
-- Głośnik (wyjście audio 3.5mm, HDMI, USB lub Bluetooth)
-- Opcjonalnie: czujniki (DHT22, BME280), diody LED, przekaźniki, itp.
-
-### Oprogramowanie
-- Raspberry Pi OS (Bullseye lub nowszy)
-- Python 3.7+
-- Pakiety systemowe: portaudio, alsa-utils, espeak/espeak-ng
-
-## Instalacja
-
-### 1. Przy użyciu pip
-```bash
-pip install rpi-stt-tts-shell
-```
-
-### 2. Przy użyciu Poetry
-```bash
-poetry add rpi-stt-tts-shell
-```
-
-### 3. Z repozytorium
-```bash
-git clone https://github.com/user/rpi-stt-tts-shell.git
-cd rpi-stt-tts-shell
-make install  # lub: poetry install
-```
-
-### 4. Wdrożenie na wielu urządzeniach
-
-Pakiet zawiera narzędzia do automatycznego wdrażania na wielu urządzeniach Raspberry Pi:
-
-```bash
-# Skanowanie sieci w poszukiwaniu urządzeń Raspberry Pi
-make scan
-
-# Wdrożenie na wszystkie znalezione urządzenia
-make deploy
-```
-
-## Konfiguracja
-
-Konfiguracja znajduje się w pliku `config.json`:
-
-```json
-{
-  "stt": {
-    "engine": "pocketsphinx",
-    "language": "pl",
-    "threshold": 0.5,
-    "keyword": "komputer"
-  },
-  "tts": {
-    "engine": "espeak",
-    "language": "pl",
-    "rate": 150,
-    "volume": 0.8
-  },
-  "gpio": {
-    "light": 17,
-    "fan": 18,
-    "dht_sensor": 4
-  },
-  "logging": {
-    "enable": true,
-    "level": "INFO",
-    "file": "assistant.log"
-  }
-}
-```
-
-## Architektura pakietu
-
-```
-rpi-stt-tts-shell/
-├── rpi_stt_tts_shell/         # Pakiet główny
-│   ├── __init__.py
-│   ├── assistant.py           # Główny moduł asystenta
-│   ├── stt/                   # Moduły rozpoznawania mowy
-│   │   ├── __init__.py
-│   │   ├── pocketsphinx_engine.py
-│   │   ├── vosk_engine.py
-│   │   ├── whisper_engine.py
-│   │   └── google_engine.py
-│   ├── tts/                   # Moduły syntezy mowy
-│   │   ├── __init__.py
-│   │   ├── espeak_engine.py
-│   │   ├── piper_engine.py
-│   │   ├── festival_engine.py
-│   │   └── google_engine.py
-│   ├── gpio_controller.py     # Kontroler GPIO
-│   ├── sensors.py             # Obsługa czujników
-│   └── plugins/               # Wtyczki rozszerzające funkcjonalność
-│       ├── __init__.py
-│       ├── weather.py
-│       ├── timer.py
-│       └── music.py
-```
-
-## Obsługiwane silniki STT i TTS
-
-### Silniki STT (Speech to Text)
-- **PocketSphinx** (offline, lekki, niższa dokładność)
-- **Vosk** (offline, średnia dokładność)
-- **Whisper** (offline, wysoka dokładność, wymaga mocniejszego Raspberry Pi)
-- **Google Speech Recognition** (online, wysoka dokładność)
-
-### Silniki TTS (Text to Speech)
-- **eSpeak/eSpeak-NG** (offline, szybki, mniej naturalny głos)
-- **Piper TTS** (offline, naturalny głos, wymaga mocniejszego Raspberry Pi)
-- **Festival** (offline, średnia jakość)
-- **Google TTS** (online, wysoka jakość)
-
-## Komendy głosowe
-
-Domyślnie asystent nasłuchuje słowa kluczowego (domyślnie "komputer"), po którym rozpoznaje następujące polecenia:
-
-- "Włącz światło" - aktywuje GPIO do włączenia światła
-- "Wyłącz światło" - dezaktywuje GPIO
-- "Włącz wentylator" - aktywuje GPIO dla wentylatora
-- "Wyłącz wentylator" - dezaktywuje GPIO dla wentylatora
-- "Jaka jest temperatura" - odczytuje aktualną temperaturę z czujnika DHT
-- "Jaka jest wilgotność" - odczytuje aktualną wilgotność z czujnika DHT
-- "Która godzina" - odczytuje aktualny czas
-- "Dzisiejsza data" - odczytuje aktualną datę
-- "Pomoc" - lista dostępnych poleceń
-- "Koniec" lub "Wyłącz się" - kończy działanie asystenta
-
-## Interfejs programistyczny (API)
-
-### Inicjalizacja asystenta
-
-```python
-from rpi_stt_tts_shell import VoiceAssistant
-
-# Inicjalizacja z domyślną konfiguracją
-assistant = VoiceAssistant()
-
-# Inicjalizacja z własną konfiguracją
-assistant = VoiceAssistant(config_path='my_config.json')
-
-# Uruchomienie asystenta
-assistant.start()
-```
-
-### Dodawanie własnych komend
-
-```python
-from rpi_stt_tts_shell import VoiceAssistant, Command
-
-assistant = VoiceAssistant()
-
-# Dodawanie prostej komendy
-@assistant.command("powiedz cześć")
-def say_hello(assistant):
-    assistant.speak("Cześć, miło Cię poznać!")
-
-# Dodawanie komendy z parametrami
-@assistant.command("ustaw minutnik na {minutes} minut")
-def set_timer(assistant, minutes):
-    # Konwersja na liczbę
-    mins = int(minutes)
-    assistant.speak(f"Ustawiam minutnik na {mins} minut")
-    # Logika minutnika...
-
-# Uruchomienie asystenta
-assistant.start()
-```
-
-### Obsługa GPIO
-
-```python
-from rpi_stt_tts_shell import VoiceAssistant, GPIOController
-
-assistant = VoiceAssistant()
-gpio = GPIOController()
-
-# Konfiguracja pinów
-gpio.setup(17, gpio.OUT)  # LED
-gpio.setup(18, gpio.OUT)  # Wentylator
+- Czterordzeniowy procesor Cortex-A55 (do 1.6GHz)
+- 1/2/4/8 GB pamięci RAM LPDDR4
+- Pamięć eMMC (0/8/16/32/64 GB) i slot na kartę microSD
+- WiFi 6 (802.11 b/g/n) i Bluetooth 5.0
+- Interfejs HDMI micro (wyjście 1080p60)
+- Port Gigabit Ethernet (z obsługą PoE przy użyciu dodatkowego HAT)
+- Interfejsy USB: 1x USB 2.0 Type-C OTG, 1x USB 3.0 Type-C HOST
+- 40-pinowe złącze rozszerzeń (kompatybilne z Raspberry Pi)
+
+## Główne różnice między Radxa ZERO 3W/3E a Raspberry Pi
+
+1. **Układ SoC**: 
+   - Radxa: Rockchip RK3566
+   - Raspberry Pi: Broadcom BCM2710/2711
 
 @assistant.command("włącz światło")
 def light_on(assistant):
@@ -985,13 +566,7 @@ Jest to uproszczona wersja głównego skryptu instalacyjnego:
 # config-radxa.sh
 ```
 
-Ten skrypt zastępuje oryginalny config.sh i uwzględnia różnice w konfiguracji interfejsów na Radxa:
-- Włączenie SSH
-- Włączenie SPI (poprzez overlays w uEnv.txt lub config.txt)
-- Włączenie I2C z instalacją narzędzi i2c-tools
-- Włączenie UART/Serial
-- Włączenie I2S dla audio (niezbędne dla ReSpeaker)
-- Kolorowe logi i przejrzyste komunikaty
+### Funkcje
 
 ## 4. Skrypt konfiguracyjny dla ReSpeaker 2-Mic Pi HAT
 
@@ -1009,7 +584,16 @@ Dedykowany skrypt do konfiguracji nakładki ReSpeaker 2-Mic Pi HAT na Radxa Zero
 - Testowy skrypt dla LED Ring
 - Przykładowy asystent głosowy
 
-## Najważniejsze różnice w porównaniu do Raspberry Pi
+
+### Główne różnice w porównaniu do Raspberry Pi
+
+- Wykorzystuje `gpiod` zamiast `RPi.GPIO`
+- Dostosowuje wielkość pamięci swap do modelu Radxa
+- Specyficzne biblioteki Python dla Rockchip RK3566
+- 
+- Specyficzna konfiguracja `asound.conf` dla Radxa
+- Wykorzystanie innych numerów pinów GPIO
+- Dostosowane sterowniki dla układu Rockchip RK3566
 
 1. **Sterowniki GPIO**:
    - Wykorzystanie biblioteki `gpiod` zamiast `RPi.GPIO`
@@ -1026,4 +610,27 @@ Dedykowany skrypt do konfiguracji nakładki ReSpeaker 2-Mic Pi HAT na Radxa Zero
 4. **Zarządzanie pamięcią**:
    - Specyficzna konfiguracja swap dla Radxa, uwzględniająca jego potrzeby
 
-Wszystkie skrypty są w peł
+## respeaker.sh
+
+Skrypt `respeaker.sh` konfiguruje nakładkę ReSpeaker 2-Mic Pi HAT na Radxa ZERO 3W/3E.
+
+
+## Przykład użycia
+
+```bash
+# Włączenie interfejsów
+sudo ./config.sh -i
+
+# Instalacja Poetry
+./poetry.sh
+
+# Konfiguracja ReSpeaker
+sudo ./respeaker.sh
+```
+
+## Uwagi
+
+- Skrypty zostały dostosowane specjalnie dla Radxa ZERO 3W/3E
+- Mogą wymagać uprawnień administratora (sudo)
+- Zalecane jest wykonanie kopii zapasowej systemu przed modyfikacjami
+- Wspierane są tylko modele Radxa ZERO 3W/3E z systemem Debian/Ubuntu

@@ -2,7 +2,7 @@
 # Author: Tom Sapletta
 # Data: 15 maja 2025
 
-.PHONY: all install scan deploy test clean docs help run update-deps
+.PHONY: all install scan deploy test clean docs help run update-deps setup-radxa
 
 # Zmienne konfiguracyjne
 PYTHON = python3
@@ -12,6 +12,7 @@ PROJECT_NAME = rpi-stt-tts-shell
 SCAN_SCRIPT = scan.sh
 DEPLOY_SCRIPT = deploy.sh
 TEST_SCRIPT = test_script.sh
+SETUP_RADXA_SCRIPT = zero3w/respeaker.sh
 PROJECT_DIR = project_files
 CSV_FILE = raspberry_pi_devices.csv
 LOG_DIR = deployment_logs
@@ -32,9 +33,9 @@ install-pip:
 	$(PIP) install -e .
 	@echo "Instalacja zakończona."
 
-# Skanowanie sieci w poszukiwaniu urządzeń Raspberry Pi
+# Skanowanie sieci w poszukiwaniu urządzeń Raspberry Pi/Radxa
 scan:
-	@echo "Skanowanie sieci w poszukiwaniu urządzeń Raspberry Pi..."
+	@echo "Skanowanie sieci w poszukiwaniu urządzeń Raspberry Pi/Radxa..."
 	chmod +x $(SCAN_SCRIPT)
 	./$(SCAN_SCRIPT)
 	@echo "Skanowanie zakończone. Wyniki zapisano w $(CSV_FILE)."
@@ -42,12 +43,12 @@ scan:
 # Skanowanie określonego zakresu sieci
 scan-range:
 	@echo "Podaj zakres sieci do skanowania (np. 192.168.1.0/24):"
-	@read range && chmod +x $(SCAN_SCRIPT) && ./$(SCAN_SCRIPT) -r $$range
+	@read range && chmod +x $(SCAN_SCRIPT) && ./$(SCAN_SCRIPT) -r $range
 	@echo "Skanowanie zakończone. Wyniki zapisano w $(CSV_FILE)."
 
 # Wdrażanie projektu na wszystkie wykryte urządzenia
 deploy:
-	@echo "Wdrażanie projektu na wszystkie wykryte urządzenia Raspberry Pi..."
+	@echo "Wdrażanie projektu na wszystkie wykryte urządzenia..."
 	@if [ ! -f $(CSV_FILE) ]; then \
 		echo "BŁĄD: Plik $(CSV_FILE) nie istnieje. Najpierw uruchom 'make scan'."; \
 		exit 1; \
@@ -58,20 +59,20 @@ deploy:
 
 # Wdrażanie projektu na określone urządzenie IP
 deploy-ip:
-	@echo "Podaj adres IP urządzenia Raspberry Pi:"
-	@read ip && chmod +x $(DEPLOY_SCRIPT) && ./$(DEPLOY_SCRIPT) -i $$ip
+	@echo "Podaj adres IP urządzenia do wdrożenia:"
+	@read ip && chmod +x $(DEPLOY_SCRIPT) && ./$(DEPLOY_SCRIPT) -i $ip
 	@echo "Wdrażanie zakończone. Logi zapisano w katalogu $(LOG_DIR)."
 
 # Wdrażanie projektu z niestandardowymi parametrami
 deploy-custom:
 	@echo "Podaj nazwę użytkownika SSH [pi]:"
-	@read user && user=$${user:-pi} && \
+	@read user && user=${user:-pi} && \
 	echo "Podaj hasło SSH [raspberry]:" && \
-	read password && password=$${password:-raspberry} && \
-	echo "Podaj katalog zdalny [/home/$$user/$(PROJECT_NAME)]:" && \
-	read remote_dir && remote_dir=$${remote_dir:-/home/$$user/$(PROJECT_NAME)} && \
+	read password && password=${password:-raspberry} && \
+	echo "Podaj katalog zdalny [/home/$user/$(PROJECT_NAME)]:" && \
+	read remote_dir && remote_dir=${remote_dir:-/home/$user/$(PROJECT_NAME)} && \
 	chmod +x $(DEPLOY_SCRIPT) && \
-	./$(DEPLOY_SCRIPT) -u $$user -p $$password -r $$remote_dir
+	./$(DEPLOY_SCRIPT) -u $user -p $password -r $remote_dir
 	@echo "Wdrażanie zakończone. Logi zapisano w katalogu $(LOG_DIR)."
 
 # Przygotowanie plików projektu
@@ -107,7 +108,7 @@ clean-all: clean
 	@echo "Czyszczenie wszystkich plików generowanych..."
 	rm -rf $(LOG_DIR) $(DOC_DIR)
 	@echo "Czy chcesz usunąć również plik CSV z wykrytymi urządzeniami? [y/N]"
-	@read ans && [ "$$ans" = "y" ] && rm -f $(CSV_FILE) || true
+	@read ans && [ "$ans" = "y" ] && rm -f $(CSV_FILE) || true
 	@echo "Czyszczenie zakończone."
 
 # Aktualizacja zależności
@@ -128,6 +129,17 @@ run-sudo:
 	sudo $(POETRY) run python -m $(PROJECT_NAME)
 	@echo "Aplikacja zakończona."
 
+# Konfiguracja Radxa z ReSpeaker 2-Mic Pi HAT
+setup-radxa:
+	@echo "Konfiguracja Radxa z ReSpeaker 2-Mic Pi HAT..."
+	@if [ ! -f $(SETUP_RADXA_SCRIPT) ]; then \
+		echo "BŁĄD: Plik $(SETUP_RADXA_SCRIPT) nie istnieje."; \
+		exit 1; \
+	fi
+	chmod +x $(SETUP_RADXA_SCRIPT)
+	sudo ./$(SETUP_RADXA_SCRIPT)
+	@echo "Konfiguracja Radxa zakończona."
+
 # Pełny cykl: skanowanie, przygotowanie, wdrożenie
 full-cycle: scan prepare-files deploy
 	@echo "Pełny cykl wdrożenia zakończony pomyślnie."
@@ -139,9 +151,28 @@ help:
 	@echo "Dostępne cele:"
 	@echo "  install         - Instalacja projektu lokalnie używając Poetry"
 	@echo "  install-pip     - Instalacja projektu lokalnie używając pip"
-	@echo "  scan            - Skanowanie sieci w poszukiwaniu urządzeń Raspberry Pi"
+	@echo "  scan            - Skanowanie sieci w poszukiwaniu urządzeń Raspberry Pi/Radxa"
 	@echo "  scan-range      - Skanowanie określonego zakresu sieci"
 	@echo "  deploy          - Wdrażanie projektu na wszystkie wykryte urządzenia"
+	@echo "  deploy-ip       - Wdrażanie projektu na określone urządzenie IP"
+	@echo "  deploy-custom   - Wdrażanie projektu z niestandardowymi parametrami"
+	@echo "  prepare-files   - Przygotowanie plików projektu do wdrożenia"
+	@echo "  test            - Uruchomienie testów lokalnie"
+	@echo "  docs            - Generowanie dokumentacji"
+	@echo "  clean           - Czyszczenie plików tymczasowych"
+	@echo "  clean-all       - Czyszczenie wszystkich plików generowanych"
+	@echo "  update-deps     - Aktualizacja zależności"
+	@echo "  run             - Uruchomienie aplikacji"
+	@echo "  run-sudo        - Uruchomienie aplikacji z uprawnieniami administratora"
+	@echo "  setup-radxa     - Konfiguracja Radxa 3W/3E z ReSpeaker 2-Mic Pi HAT"
+	@echo "  full-cycle      - Pełny cykl: skanowanie, przygotowanie, wdrożenie"
+	@echo "  help            - Wyświetlenie tej pomocy"
+	@echo ""
+	@echo "Przykład użycia:"
+	@echo "  make scan       # Skanowanie sieci"
+	@echo "  make deploy     # Wdrożenie projektu"
+	@echo "  make setup-radxa # Konfiguracja Radxa z ReSpeaker"
+	@echo ""ryte urządzenia"
 	@echo "  deploy-ip       - Wdrażanie projektu na określone urządzenie IP"
 	@echo "  deploy-custom   - Wdrażanie projektu z niestandardowymi parametrami"
 	@echo "  prepare-files   - Przygotowanie plików projektu do wdrożenia"

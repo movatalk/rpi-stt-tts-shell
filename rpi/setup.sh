@@ -56,7 +56,7 @@ fi
 # Instalacja Poetry
 info "Instalacja Poetry"
 curl -sSL https://install.python-poetry.org | python3 - || error "Nie można zainstalować Poetry"
-
+poetry || export PATH="$HOME/.local/bin:$PATH"
 # Dodaj Poetry do PATH
 if ! grep -q "export PATH=\"\$HOME/.local/bin:\$PATH\"" ~/.bashrc; then
     echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
@@ -87,7 +87,7 @@ poetry init --no-interaction --name "przyklad-poetry" --description "Przykładow
 
 # Dodawanie zależności odpowiednich dla Raspberry Pi
 info "Dodawanie przykładowych zależności"
-poetry add rpi.gpio adafruit-blinka
+poetry add rpi.gpio adafruit-blinka rpi_stt_tts_shell
 
 # Tworzenie przykładowego skryptu
 cat > main.py << 'EOF'

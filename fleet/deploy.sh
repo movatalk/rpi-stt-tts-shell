@@ -1,5 +1,4 @@
-# Uruchomienie programu
-main "$@"#!/bin/bash
+#!/bin/bash
 # deploy.sh - Skrypt do wdrażania, testowania i logowania projektu na urządzeniach Raspberry Pi
 # Author: Tom Sapletta
 # Data: 15 maja 2025
@@ -23,7 +22,7 @@ PROJECT_DIR="./"  # Katalog z plikami projektu do wdrożenia
 SSH_USER="pi"                # Domyślny użytkownik SSH dla Raspberry Pi
 SSH_PASSWORD="raspberry"     # Domyślne hasło (używane tylko jeśli sshpass jest dostępny)
 REMOTE_DIR="/home/pi/deployed_project"  # Katalog docelowy na Raspberry Pi
-TEST_SCRIPT="test_script.sh"  # Skrypt testowy do uruchomienia po wdrożeniu
+TEST_SCRIPT="test.sh"  # Skrypt testowy do uruchomienia po wdrożeniu
 
 # Sprawdź wymagane narzędzia
 for cmd in ssh scp grep; do
@@ -475,7 +474,7 @@ main() {
         log "INFO" "Wdrażanie tylko na urządzenie o adresie IP: $ip_to_deploy"
 
         # Znajdź odpowiedni wiersz w pliku CSV
-        while IFS=',' read -r ip hostname is_rpi os_info model timestamp; do
+        while IFS=',' read -r ip hostname model timestamp; do
             if [ "$ip" == "$ip_to_deploy" ]; then
                 deploy_to_device "$ip" "$hostname" "$is_rpi"
                 break

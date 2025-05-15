@@ -426,4 +426,60 @@ build-backend = "poetry.core.masonry.api"
 
 ---
 
-*Dokumentacja przygotowana: 15 maja 2025*
+
+
+
+## Nowe funkcje zarządzania urządzeniami
+
+1. **Interaktywny wybór urządzeń** - możliwość przeglądania i wybierania urządzeń z listy zidentyfikowanych w sieci
+
+2. **Zarządzanie urządzeniami** przez menu z opcjami:
+   - Połączenie przez SSH
+   - Aktualizacja systemu (automatycznie dopasowuje komendę do systemu)
+   - Wykonywanie dowolnych komend zdalnie
+   - Przesyłanie plików na urządzenie
+   - Pobieranie plików z urządzenia
+   - Edycja konfiguracji urządzenia
+   - Restart urządzenia
+
+3. **Automatyczna konfiguracja** - podczas skanowania tworzone są katalogi konfiguracyjne dla każdego znalezionego urządzenia w `~/hosts/`
+
+4. **Obsługa różnych typów urządzeń** - skrypt inteligentnie wykrywa Raspberry Pi, Radxa i OpenWRT, dostosowując komendy do konkretnego typu
+
+5. **Tryby pracy**:
+   - Interaktywny - menu z wyborem opcji
+   - Liniowy - możliwość wywołania określonych funkcji bezpośrednio z linii poleceń
+
+## Użycie skryptu
+
+Skrypt można uruchomić na kilka sposobów:
+
+1. **Interaktywny tryb menu**:
+   ```bash
+   ./scan.sh
+   ```
+
+2. **Skanowanie sieci**:
+   ```bash
+   ./scan.sh scan -r 192.168.1.0/24
+   ```
+
+3. **Zarządzanie urządzeniami**:
+   ```bash
+   ./scan.sh manage
+   ```
+
+4. **Wyświetlenie listy urządzeń**:
+   ```bash
+   ./scan.sh list
+   ```
+
+## Zalety nowego skryptu
+
+- **Kompleksowe zarządzanie** - skanowanie, wykrywanie i zarządzanie w jednym narzędziu
+- **Łatwa obsługa** - przyjazne dla użytkownika menu
+- **Elastyczność** - automatyczne wykrywanie sieci i typów urządzeń
+- **Dokładniejsze wykrywanie** - poprawiona detekcja urządzeń za pomocą nazw hostów i dostępnych usług
+- **Zapisywanie konfiguracji** - wszystkie wykryte urządzenia są automatycznie konfigurowane
+
+Teraz możesz nie tylko skanować sieć w poszukiwaniu urządzeń, ale także wygodnie zarządzać nimi, wykonywać aktualizacje systemu, przenosić pliki i monitorować ich stan - wszystko z jednego narzędzia!
