@@ -129,7 +129,7 @@ setup_dev_environment() {
     install_monitoring_tools
 
     # Final system update
-    sudo apt-get autoremove -y
+    sudo apt-get Authoremove -y
     sudo apt-get clean
 
     log "INFO" "Development environment setup complete!"

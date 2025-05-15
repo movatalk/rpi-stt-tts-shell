@@ -6,7 +6,7 @@ Plik: rpi_stt_tts_shell/main.py
 Ten skrypt demonstruje integrację kilku typowych bibliotek IoT
 używanych na Raspberry Pi, zarządzanych przez Poetry.
 """
-# Autor: Tom Sapletta
+# Author: Tom Sapletta
 # Data: 15 maja 2025
 
 import sys

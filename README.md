@@ -457,7 +457,7 @@ Zobacz plik [LICENSE](LICENSE), aby uzyskać więcej informacji.
 
 Wkłady w projekt są mile widziane. Proszę zapoznać się z wytycznymi dotyczącymi współtworzenia w pliku CONTRIBUTING.md.
 
-## Autorzy
+## Authorzy
 
 - Tom Sapletta
 

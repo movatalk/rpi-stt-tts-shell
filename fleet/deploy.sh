@@ -1,7 +1,7 @@
 # Uruchomienie programu
 main "$@"#!/bin/bash
 # deploy.sh - Skrypt do wdrażania, testowania i logowania projektu na urządzeniach Raspberry Pi
-# Autor: Tom Sapletta
+# Author: Tom Sapletta
 # Data: 15 maja 2025
 
 # Ustaw kodowanie kolorów

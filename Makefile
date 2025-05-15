@@ -1,5 +1,5 @@
 # Makefile dla projektu rpi-stt-tts-shell
-# Autor: Tom Sapletta
+# Author: Tom Sapletta
 # Data: 15 maja 2025
 
 .PHONY: all install scan deploy test clean docs help run update-deps

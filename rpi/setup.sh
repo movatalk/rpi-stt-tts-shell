@@ -1,6 +1,6 @@
 #!/bin/bash
 # Skrypt instalacyjny Poetry dla Raspberry Pi Zero v2 i Raspberry Pi 4
-# Autor: Tom Sapletta
+# Author: Tom Sapletta
 # Data: 15 maja 2025
 
 set -e  # Zatrzymaj skrypt przy błędzie

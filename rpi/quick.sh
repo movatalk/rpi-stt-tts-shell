@@ -1,7 +1,7 @@
 #!/bin/bash
 # Instalator szybki dla Poetry na Raspberry Pi (dla niecierpliwych)
 # Skrypt do szybkiego testowania
-# Autor: Tom Sapletta
+# Author: Tom Sapletta
 # Data: 15 maja 2025
 
 set -e  # Zatrzymaj skrypt przy błędzie
