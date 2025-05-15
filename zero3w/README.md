@@ -949,3 +949,81 @@ Skrypt testowy można dostosować do konkretnego projektu, dodając lub modyfiku
 - Skrypty są skonfigurowane do pracy z domyślnym użytkownikiem Raspberry Pi (`pi` z hasłem `raspberry`). W środowisku produkcyjnym zalecane jest użycie kluczy SSH zamiast haseł.
 - Przed wdrożeniem w środowisku produkcyjnym, zalecane jest przetestowanie skryptów w środowisku testowym.
 - Raport HTML zawiera szczegółowe informacje o procesie wdrażania i może być przydatny do diagnostyki problemów.
+
+
+
+Zaktualizowałem skrypty instalacyjne i konfiguracyjne dla płytki Radxa Zero 3W/3E, uwzględniając specyfikę tego urządzenia i integrację z ReSpeaker 2-Mic Pi HAT.
+
+## 1. Skrypt instalacyjny Poetry dla Radxa Zero 3W/3E
+
+```bash
+# setup-radxa-poetry.sh
+```
+
+Ten skrypt zawiera:
+- Automatyczne wykrywanie modelu Radxa
+- Konfigurację pamięci swap dostosowaną do Radxa Zero
+- Instalację Poetry
+- Tworzenie przykładowego projektu z bibliotekami specyficznymi dla Radxa (gpiod zamiast RPi.GPIO)
+- Szczegółowe instrukcje użycia wraz z dodatkowymi informacjami dla Radxa Zero 3W/3E
+
+## 2. Szybki instalator Poetry dla Radxa
+
+```bash
+# quick-radxa.sh
+```
+
+Jest to uproszczona wersja głównego skryptu instalacyjnego:
+- Szybka instalacja Poetry
+- Testowy projekt wykorzystujący biblioteki specyficzne dla Radxa
+- Wykrywanie chipów GPIO dostępnych w systemie
+- Informacja o możliwości konfiguracji ReSpeaker
+
+## 3. Skrypt konfiguracyjny interfejsów dla Radxa Zero 3W/3E
+
+```bash
+# config-radxa.sh
+```
+
+Ten skrypt zastępuje oryginalny config.sh i uwzględnia różnice w konfiguracji interfejsów na Radxa:
+- Włączenie SSH
+- Włączenie SPI (poprzez overlays w uEnv.txt lub config.txt)
+- Włączenie I2C z instalacją narzędzi i2c-tools
+- Włączenie UART/Serial
+- Włączenie I2S dla audio (niezbędne dla ReSpeaker)
+- Kolorowe logi i przejrzyste komunikaty
+
+## 4. Skrypt konfiguracyjny dla ReSpeaker 2-Mic Pi HAT
+
+```bash
+# setup_radxa_respeaker.sh
+```
+
+Dedykowany skrypt do konfiguracji nakładki ReSpeaker 2-Mic Pi HAT na Radxa Zero 3W/3E:
+- Automatyczne wykrywanie modelu Radxa
+- Instalacja wymaganych pakietów
+- Konfiguracja audio dla ReSpeaker (asound.conf)
+- Włączenie niezbędnych interfejsów (I2C, I2S)
+- Instalacja sterowników i bibliotek dla ReSpeaker
+- Konfiguracja GPIO
+- Testowy skrypt dla LED Ring
+- Przykładowy asystent głosowy
+
+## Najważniejsze różnice w porównaniu do Raspberry Pi
+
+1. **Sterowniki GPIO**:
+   - Wykorzystanie biblioteki `gpiod` zamiast `RPi.GPIO`
+   - Dostęp do GPIO przez interfejs `/dev/gpiochipX`
+
+2. **Konfiguracja interfejsów**:
+   - Wykorzystanie systemu overlays w `/boot/uEnv.txt` (lub `/boot/config.txt` jako alternatywa)
+   - Inne nazewnictwo overlays dla Radxa
+
+3. **Sterowniki audio**:
+   - Konfiguracja asound.conf dostosowana do Radxa
+   - Instalacja sterowników ReSpeaker z repozytorium dostosowanego do Radxa
+
+4. **Zarządzanie pamięcią**:
+   - Specyficzna konfiguracja swap dla Radxa, uwzględniająca jego potrzeby
+
+Wszystkie skrypty są w peł
