@@ -24,7 +24,7 @@ check_raspberry_pi() {
     if [ ! -f /proc/device-tree/model ]; then
         log "ERROR" "Not running on a Raspberry Pi"
         return 1
-    }
+    fi
 
     # Display Pi model
     cat /proc/device-tree/model
@@ -158,7 +158,7 @@ configure_raspberry_pi() {
     if [ "$EUID" -eq 0 ]; then
         log "ERROR" "Do not run this script as root. Use sudo if needed."
         return 1
-    }
+    fi
 
     # Check if running on Raspberry Pi
     check_raspberry_pi || return 1
