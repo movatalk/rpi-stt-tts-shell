@@ -1,6 +1,8 @@
 .idea
 venv
 deployment_logs
+users.txt
+commands.txt
 devices.csv
 # Byte-compiled / optimized / DLL files
 __pycache__/
