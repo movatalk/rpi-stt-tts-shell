@@ -22,7 +22,7 @@ BOLD='\033[1m'
 # Nazwa pliku wyjściowego CSV
 OUTPUT_FILE="devices.csv"
 # Nazwa pliku bazowego dla wszystkich urządzeń
-BASE_OUTPUT_FILE="devices_all.csv"
+BASE_OUTPUT_FILE="devicesC_base.csv"
 
 # Tryb debugowania (ustaw na "true" aby włączyć)
 DEBUG_MODE="false"
