@@ -1,4 +1,4 @@
-The error you're seeing:
+# The error you're seeing:
 
 ```
 Permission denied (publickey)
@@ -93,6 +93,4 @@ Now you should be able to SSH normally:
 ssh pi@192.168.1.2
 ```
 
----
 
-Let me know if you need help with SSH config or doing this physically.
