@@ -26,7 +26,7 @@ check_raspberry_pi() {
     if [ ! -f /proc/device-tree/model ]; then
         log "ERROR" "Not running on a Raspberry Pi"
         return 1
-    }
+    fi
     return 0
 }
 
@@ -114,7 +114,7 @@ setup_dev_environment() {
     if [ "$EUID" -eq 0 ]; then
         log "ERROR" "Do not run this script as root. Use sudo if needed."
         return 1
-    }
+    fi
 
     # Check if running on Raspberry Pi
     check_raspberry_pi || return 1
