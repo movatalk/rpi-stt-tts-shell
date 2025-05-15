@@ -6,7 +6,7 @@ I'll also create a complementary script for managing these hosts:
 
 1. **Host Configuration Location**
    - Creates host directories directly in `~/hosts/`
-   - Example: `~/hosts/192.168.188.127/`
+   - Example: `~/hosts/192.168.1.2/`
 
 2. **Comprehensive Host Configuration**
    - `.env` file with connection details
@@ -22,7 +22,7 @@ I'll also create a complementary script for managing these hosts:
 ./ssh_host_manager.sh list
 
 # Configure a specific host
-./ssh_host_manager.sh 192.168.188.127
+./ssh_host_manager.sh 192.168.1.2
 
 # If no argument, list hosts
 ./ssh_host_manager.sh
@@ -31,7 +31,7 @@ I'll also create a complementary script for managing these hosts:
 ### Directory Structure
 ```
 ~/hosts/
-├── 192.168.188.127/
+├── 192.168.1.2/
 │   ├── .env
 │   ├── ssh_config
 │   └── README.md
