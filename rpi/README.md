@@ -1,0 +1,1 @@
+# konfiguracja dla RPI zero 2 3,4,5

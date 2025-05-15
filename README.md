@@ -45,6 +45,24 @@ poetry add rpi-stt-tts-shell
 
 ### 3. Instalacja z repozytorium
 
+przygotowanie środowiska
+
+```bash
+
++ [git setup](https://git-scm.com/book/ms/v2/Getting-Started-First-Time-Git-Setup)
+
+```bash
+sudo apt install git
+```
+
+```bash
+git config --global user.name "Tom"
+git config --global user.email info@softreck.dev
+```
+
+Instalacja z repozytorium
+
+
 ```bash
 git clone https://github.com/movatalk/rpi-stt-tts-shell.git
 cd rpi-stt-tts-shell
