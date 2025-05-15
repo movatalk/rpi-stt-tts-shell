@@ -2,9 +2,9 @@
 # Skaner Raspberry Pi z konfiguracją z plików
 
 # Konfiguracja plików źródłowych
-CONFIG_DIR="${HOME}/.config/rpi_scanner"
+CONFIG_DIR="${HOME}/hosts"
 USERS_FILE="$CONFIG_DIR/users.txt"
-COMMANDS_FILE="$CONFIG_DIR/detection_commands.txt"
+COMMANDS_FILE="$CONFIG_DIR/commands.txt"
 
 # Ustaw kodowanie kolorów
 RED='\033[0;31m'

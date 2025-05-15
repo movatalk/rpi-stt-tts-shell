@@ -1,10 +1,7 @@
 #!/bin/bash
-# Skaner Raspberry Pi z konfiguracją z plików
-
-# Konfiguracja plików źródłowych
-CONFIG_DIR="${HOME}/.config/rpi_scanner"
-USERS_FILE="$CONFIG_DIR/users.txt"
-COMMANDS_FILE="$CONFIG_DIR/detection_commands.txt"
+# scan.sh - Skaner Raspberry Pi w sieci lokalnej zapisujący wyniki do pliku CSV
+# Author: Tom Sapletta
+# Data: 15 maja 2025
 
 # Ustaw kodowanie kolorów
 RED='\033[0;31m'
@@ -17,69 +14,74 @@ BOLD='\033[1m'
 # Nazwa pliku wyjściowego CSV
 OUTPUT_FILE="devices.csv"
 
-# Funkcja logowania
-log() {
-    local level="$1"
-    local message="$2"
-    local timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+# Sprawdź wymagane narzędzia
+for cmd in nmap grep awk; do
+    if ! command -v "$cmd" &> /dev/null; then
+        echo -e "${RED}Błąd: Narzędzie '$cmd' nie jest zainstalowane.${NC}"
+        echo -e "Zainstaluj je za pomocą:"
 
-    if [ "$level" = "INFO" ]; then
-        echo "[INFO] $timestamp - $message"
-    elif [ "$level" = "WARN" ]; then
-        echo "[WARN] $timestamp - $message" >&2
-    elif [ "$level" = "ERROR" ]; then
-        echo "[ERROR] $timestamp - $message" >&2
+        if [ -f /etc/debian_version ]; then
+            echo -e "  sudo apt-get install $cmd"
+        elif [ -f /etc/redhat-release ]; then
+            echo -e "  sudo dnf install $cmd"
+        elif [ -f /etc/arch-release ]; then
+            echo -e "  sudo pacman -S $cmd"
+        else
+            echo -e "  Zainstaluj '$cmd' używając menedżera pakietów swojego systemu"
+        fi
+
+        exit 1
+    fi
+done
+
+# Funkcja określająca domyślny interfejs sieciowy
+get_default_interface() {
+    # Różne metody dla różnych systemów
+    if [ "$(uname)" == "Linux" ]; then
+        # Linux - sprawdź trasę domyślną
+        route -n | grep '^0.0.0.0' | grep -o '[^ ]*
+
+# Uruchomienie programu
+main "$@"
+ | head -n1
+    elif [ "$(uname)" == "Darwin" ]; then
+        # macOS
+        route -n get default | grep interface | awk '{print $2}'
     else
-        echo "$message"
+        # Jeśli nie można ustalić, używamy pierwszego interfejsu
+        ip -o link show | awk -F': ' '{print $2}' | grep -v lo | head -n1
     fi
 }
 
-# Funkcja tworzenia domyślnych plików konfiguracyjnych
-create_default_config_files() {
-    # Upewnij się, że katalog istnieje
-    mkdir -p "$CONFIG_DIR"
+# Funkcja pobierająca zakres sieci na podstawie adresu IP i maski
+get_network_range() {
+    local interface=$1
+    local ip
+    local network
 
-    # Domyślni użytkownicy
-    if [ ! -f "$USERS_FILE" ]; then
-        cat > "$USERS_FILE" << EOF
-# Lista użytkowników do próby połączenia SSH
-pi
-raspberry
-admin
-root
-EOF
-        log "INFO" "Utworzono domyślny plik użytkowników: $USERS_FILE"
+    if [ "$(uname)" == "Linux" ]; then
+        # Linux
+        ip=$(ip -o -4 addr show dev "$interface" | awk '{print $4}' | cut -d/ -f1)
+
+        # Wydobądź trzy pierwsze oktety adresu IP
+        IFS=. read -r i1 i2 i3 i4 <<< "$ip"
+        network="$i1.$i2.$i3.0/24"
+    elif [ "$(uname)" == "Darwin" ]; then
+        # macOS
+        ip=$(ifconfig "$interface" | grep "inet " | awk '{print $2}')
+
+        # Wydobądź trzy pierwsze oktety adresu IP
+        first_three=$(echo "$ip" | cut -d. -f1-3)
+        network="$first_three.0/24"
+    else
+        # Domyślny zakres dla nieznanych systemów
+        network="192.168.1.0/24"
     fi
 
-    # Domyślne komendy detekcyjne
-    if [ ! -f "$COMMANDS_FILE" ]; then
-        cat > "$COMMANDS_FILE" << EOF
-# Komendy do sprawdzenia Raspberry Pi
-cat /etc/os-release
-cat /proc/cpuinfo
-uname -a
-cat /etc/issue
-vcgencmd version
-EOF
-        log "INFO" "Utworzono domyślny plik komend: $COMMANDS_FILE"
-    fi
+    echo "$network"
 }
 
-# Funkcja ładująca tablicę z pliku
-load_array_from_file() {
-    local file="$1"
-
-    # Sprawdź, czy plik istnieje
-    if [ ! -f "$file" ]; then
-        log "ERROR" "Plik $file nie istnieje"
-        return 1
-    fi
-
-    # Wczytaj linie z pliku, pomijając komentarze i puste linie
-    grep -v '^\s*#' "$file" | grep -v '^\s*$'
-}
-
-# Główna funkcja skanowania
+# Funkcja wykrywająca urządzenia Raspberry Pi
 scan_raspberry_pi() {
     local range=$1
     local temp_file=$(mktemp)
@@ -94,71 +96,72 @@ scan_raspberry_pi() {
     # Skanowanie z nmap - szukamy otwartych portów SSH
     nmap -p 22 --open "$range" -oG "$temp_file"
 
-    # Wczytaj użytkowników i komendy
-    local users_list=$(load_array_from_file "$USERS_FILE")
-    local commands_list=$(load_array_from_file "$COMMANDS_FILE")
-
     # Licznik znalezionych urządzeń Raspberry Pi
-    local counter=0
+    counter=0
 
     # Przetwarzanie wyników
     grep "22/open" "$temp_file" | while read -r line; do
-        local ip=$(echo "$line" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+')
+        ip=$(echo "$line" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+')
         if [ -n "$ip" ]; then
-            # Próba nazwy hosta
-            local hostname=$(host "$ip" 2>/dev/null | grep "domain name pointer" | cut -d' ' -f5 | sed 's/\.$//')
+            # Próba określenia czy to Raspberry Pi
+            hostname=$(host "$ip" 2>/dev/null | grep "domain name pointer" | cut -d' ' -f5 | sed 's/\.$//')
+
+            # Jeśli nie znaleziono nazwy, użyj "unknown"
             hostname=${hostname:-"unknown"}
 
             # Domyślne wartości
-            local is_raspberry_pi="false"
-            local os_info="unknown"
-            local model="unknown"
+            is_raspberry_pi="false"
+            os_info="unknown"
+            model="unknown"
 
-            # Próba detekcji Raspberry Pi dla każdego użytkownika
-            for user in $users_list; do
-                for cmd in $commands_list; do
-                    # Próba wykonania komendy SSH
-                    local pi_info=$(ssh -o BatchMode=yes -o ConnectTimeout=3 -o StrictHostKeyChecking=no "${user}@${ip}" "$cmd" 2>/dev/null)
-
-                    if [ -n "$pi_info" ]; then
-                        # Sprawdź, czy to Raspberry Pi
-                        if echo "$pi_info" | grep -iE "raspberry|raspbian|raspberry pi|bcm" > /dev/null; then
-                            is_raspberry_pi="true"
-
-                            # Wyciągnij informacje o systemie
-                            if echo "$pi_info" | grep -q "PRETTY_NAME"; then
-                                os_info=$(echo "$pi_info" | grep "PRETTY_NAME" | cut -d'"' -f2)
-                            else
-                                os_info=$(echo "$pi_info" | head -n1)
-                            fi
-
-                            # Wyciągnij model
-                            if echo "$pi_info" | grep -q "Model"; then
-                                model=$(echo "$pi_info" | grep "Model" | cut -d':' -f2 | xargs)
-                            elif echo "$pi_info" | grep -q "Revision"; then
-                                model=$(echo "$pi_info" | grep "Revision" | cut -d':' -f2 | xargs)
-                            fi
-
-                            break 2  # Wyjdź z obu pętli po znalezieniu
-                        fi
-                    fi
-                done
-            done
-
-            # Jeśli nie znaleziono, ale nazwa hosta sugeruje RPi
-            if [ "$is_raspberry_pi" = "false" ] && [[ $hostname == *raspberry* || $hostname == *pi* ]]; then
+            # Sprawdź czy nazwa sugeruje Pi
+            if [[ $hostname == *raspberry* || $hostname == *pi* ]]; then
                 is_raspberry_pi="probable"
             fi
 
-            # Zapisz do pliku, jeśli znaleziono RPi
+            # Próba pobrania informacji z urządzenia bez logowania
+            # Najpierw próbujemy użytkownika 'pi' (domyślny dla Raspberry Pi)
+            ssh_output=$(ssh -o BatchMode=yes -o ConnectTimeout=2 -o StrictHostKeyChecking=no "pi@$ip" "cat /etc/os-release 2>/dev/null || cat /etc/issue; cat /proc/cpuinfo | grep 'Model'" 2>/dev/null)
+
+            # Jeśli się nie udało, spróbuj z użytkownikiem 'root'
+            if [ -z "$ssh_output" ]; then
+                ssh_output=$(ssh -o BatchMode=yes -o ConnectTimeout=2 -o StrictHostKeyChecking=no "root@$ip" "cat /etc/os-release 2>/dev/null || cat /etc/issue; cat /proc/cpuinfo | grep 'Model'" 2>/dev/null)
+            fi
+
+            # Jeśli udało się uzyskać jakiekolwiek dane przez SSH
+            if [ -n "$ssh_output" ]; then
+                # Sprawdź, czy to Raspberry Pi na podstawie zwróconych danych
+                if [[ $ssh_output == *raspberry* || $ssh_output == *raspbian* ]]; then
+                    is_raspberry_pi="true"
+
+                    # Wyciągnij informacje o systemie operacyjnym
+                    if [[ $ssh_output == *PRETTY_NAME* ]]; then
+                        os_info=$(echo "$ssh_output" | grep "PRETTY_NAME" | cut -d'"' -f2)
+                    elif [[ $ssh_output == *Raspbian* ]]; then
+                        os_info=$(echo "$ssh_output" | grep "Raspbian" | head -n1 | tr -d '\n\r')
+                    else
+                        os_info="Raspberry Pi OS (unknown version)"
+                    fi
+
+                    # Wyciągnij model Raspberry Pi
+                    if [[ $ssh_output == *"Model"* ]]; then
+                        model=$(echo "$ssh_output" | grep "Model" | cut -d':' -f2 | tr -d '\n\r' | sed -e 's/^[[:space:]]*//')
+                    fi
+
+                    # Zwiększ licznik
+                    counter=$((counter + 1))
+                fi
+            fi
+
+            # Tylko jeśli to Raspberry Pi lub prawdopodobne Raspberry Pi, zapisz do CSV
             if [[ "$is_raspberry_pi" == "true" || "$is_raspberry_pi" == "probable" ]]; then
-                # Usuń potencjalne przecinki
+                # Usuń potencjalne przecinki z pól, które mogłyby zepsuć format CSV
                 hostname=$(echo "$hostname" | tr ',' ' ')
                 os_info=$(echo "$os_info" | tr ',' ' ')
                 model=$(echo "$model" | tr ',' ' ')
 
+                # Zapisz do pliku CSV
                 echo "$ip,$hostname,$is_raspberry_pi,$os_info,$model,$timestamp" >> "$OUTPUT_FILE"
-                counter=$((counter + 1))
             fi
         fi
     done
@@ -174,45 +177,6 @@ scan_raspberry_pi() {
     echo -e "- Wyniki zapisano do pliku: ${BOLD}${OUTPUT_FILE}${NC}"
 
     return 0
-}
-
-# Funkcja określająca domyślny interfejs sieciowy
-get_default_interface() {
-    # Różne metody dla różnych systemów
-    if [ "$(uname)" == "Linux" ]; then
-        # Linux - sprawdź trasę domyślną
-        route -n | grep '^0.0.0.0' | grep -o '[^ ]*$' | head -n1
-    elif [ "$(uname)" == "Darwin" ]; then
-        # macOS
-        route -n get default | grep interface | awk '{print $2}'
-    else
-        # Jeśli nie można ustalić, używamy pierwszego interfejsu
-        ip -o link show | awk -F': ' '{print $2}' | grep -v lo | head -n1
-    fi
-}
-
-# Funkcja pobierająca zakres sieci na podstawie adresu IP i maski
-get_network_range() {
-    local interface=$1
-    local network
-
-    if [ "$(uname)" == "Linux" ]; then
-        # Linux
-        network=$(ip -o -4 addr show dev "$interface" | awk '{print $4}')
-    elif [ "$(uname)" == "Darwin" ]; then
-        # macOS
-        network=$(ifconfig "$interface" | grep "inet " | awk '{print $4}')
-    else
-        # Domyślny zakres dla nieznanych systemów
-        network="192.168.1.0/24"
-    fi
-
-    # Jeśli nie udało się wydobyć zakresu, użyj domyślnego
-    if [ -z "$network" ]; then
-        network="192.168.1.0/24"
-    fi
-
-    echo "$network"
 }
 
 # Funkcja wyświetlająca pomoc
@@ -233,9 +197,6 @@ show_help() {
 
 # Główna funkcja
 main() {
-    # Utwórz domyślne pliki konfiguracyjne, jeśli nie istnieją
-    create_default_config_files
-
     local network_range=""
 
     # Parsowanie argumentów wiersza poleceń
@@ -280,6 +241,9 @@ main() {
 
     exit 0
 }
+
+# Uruchomienie programu
+main "$@"
 
 # Uruchomienie programu
 main "$@"

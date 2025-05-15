@@ -1,6 +1,7 @@
 #!/bin/bash
-
-# Raspberry Pi Configuration Utility
+# Konfiguracja interfejsów dla Radxa Zero 3W/3E
+# Author: Tom Sapletta
+# Data: 15 maja 2025
 
 # Logging function
 log() {
@@ -9,222 +10,282 @@ log() {
     local timestamp=$(date "+%Y-%m-%d %H:%M:%S")
 
     if [ "$level" = "INFO" ]; then
-        echo "[INFO] $timestamp - $message"
+        echo -e "\033[0;34m[INFO]\033[0m $timestamp - $message"
     elif [ "$level" = "WARN" ]; then
-        echo "[WARN] $timestamp - $message" >&2
+        echo -e "\033[1;33m[WARN]\033[0m $timestamp - $message" >&2
     elif [ "$level" = "ERROR" ]; then
-        echo "[ERROR] $timestamp - $message" >&2
+        echo -e "\033[0;31m[ERROR]\033[0m $timestamp - $message" >&2
+    elif [ "$level" = "SUCCESS" ]; then
+        echo -e "\033[0;32m[SUCCESS]\033[0m $timestamp - $message"
     else
         echo "$message"
     fi
 }
 
-# Check if running on Raspberry Pi
-check_raspberry_pi() {
+# Check if running on Radxa
+check_radxa() {
     if [ ! -f /proc/device-tree/model ]; then
-        log "ERROR" "Not running on a Raspberry Pi"
+        log "ERROR" "Nie można odczytać modelu urządzenia"
         return 1
     fi
 
-    # Display Pi model
-    cat /proc/device-tree/model
-    return 0
+    local model=$(cat /proc/device-tree/model | tr -d '\0')
+
+    if [[ "$model" == *"Radxa ZERO 3"* ]]; then
+        log "INFO" "Wykryto model: $model"
+        return 0
+    else
+        log "WARN" "Wykryty model: $model"
+        log "WARN" "Ten skrypt jest zoptymalizowany dla Radxa Zero 3W/3E"
+        echo "Kontynuować? (t/n)"
+        read -r response
+        if [[ "$response" != "t" ]]; then
+            log "INFO" "Instalacja przerwana."
+            exit 1
+        fi
+        return 0
+    fi
 }
 
 # Enable SSH
 enable_ssh() {
     if systemctl is-active ssh > /dev/null 2>&1; then
-        log "INFO" "SSH is already enabled and running"
+        log "INFO" "SSH jest już włączone i działa"
         return 0
     fi
 
-    log "INFO" "Enabling SSH..."
+    log "INFO" "Włączanie SSH..."
 
-    # Raspberry Pi OS method
-    if command -v raspi-config > /dev/null 2>&1; then
-        sudo raspi-config nonint do_ssh 0
-    else
-        # Alternative method
-        sudo systemctl enable ssh
-        sudo systemctl start ssh
-    fi
+    # Typowa metoda dla systemów Debian-based
+    sudo systemctl enable ssh
+    sudo systemctl start ssh
 
-    # Verify SSH is enabled
+    # Weryfikacja
     if systemctl is-active ssh > /dev/null 2>&1; then
-        log "INFO" "SSH enabled successfully"
+        log "SUCCESS" "SSH włączone pomyślnie"
     else
-        log "ERROR" "Failed to enable SSH"
+        log "ERROR" "Nie udało się włączyć SSH"
         return 1
     fi
 }
 
 # Enable SPI
 enable_spi() {
-    log "INFO" "Configuring SPI..."
+    log "INFO" "Konfiguracja SPI..."
 
-    # Check if already enabled
-    if grep -q "^dtparam=spi=on" /boot/config.txt; then
-        log "INFO" "SPI is already enabled"
-        return 0
+    # Konfiguracja przez overlays (metoda dla Radxa)
+    local config_file="/boot/uEnv.txt"
+
+    if [ ! -f "$config_file" ]; then
+        log "WARN" "Plik $config_file nie istnieje. Spróbuję użyć /boot/config.txt"
+        config_file="/boot/config.txt"
     fi
 
-    # Enable SPI
-    if [ -f /boot/config.txt ]; then
-        sudo sed -i 's/^#dtparam=spi=on/dtparam=spi=on/' /boot/config.txt
-        if ! grep -q "^dtparam=spi=on" /boot/config.txt; then
-            echo "dtparam=spi=on" | sudo tee -a /boot/config.txt > /dev/null
+    if [ -f "$config_file" ]; then
+        # Sprawdź czy SPI jest już włączone
+        if grep -q "overlays=.*spi" "$config_file"; then
+            log "INFO" "SPI jest już włączone"
+        else
+            # Dwie możliwe metody, zależne od struktury pliku konfiguracyjnego
+            if grep -q "^overlays=" "$config_file"; then
+                # Dodaj SPI do istniejącej linii overlays
+                sudo sed -i 's/^overlays=\(.*\)/overlays=\1 spi/' "$config_file"
+            else
+                # Dodaj nową linię dla overlays
+                echo "overlays=spi" | sudo tee -a "$config_file" > /dev/null
+            fi
+            log "SUCCESS" "SPI włączone. Wymagany restart, aby zastosować zmiany."
         fi
-        log "INFO" "SPI enabled. Reboot required to apply changes."
     else
-        log "ERROR" "Cannot find /boot/config.txt"
+        log "ERROR" "Nie znaleziono odpowiedniego pliku konfiguracyjnego dla SPI"
         return 1
     fi
 }
 
 # Enable I2C
 enable_i2c() {
-    log "INFO" "Configuring I2C..."
+    log "INFO" "Konfiguracja I2C..."
 
-    # Check if already enabled
-    if grep -q "^dtparam=i2c_arm=on" /boot/config.txt; then
-        log "INFO" "I2C is already enabled"
-        return 0
+    # Konfiguracja przez overlays (metoda dla Radxa)
+    local config_file="/boot/uEnv.txt"
+
+    if [ ! -f "$config_file" ]; then
+        log "WARN" "Plik $config_file nie istnieje. Spróbuję użyć /boot/config.txt"
+        config_file="/boot/config.txt"
     fi
 
-    # Enable I2C
-    if [ -f /boot/config.txt ]; then
-        sudo sed -i 's/^#dtparam=i2c_arm=on/dtparam=i2c_arm=on/' /boot/config.txt
-        if ! grep -q "^dtparam=i2c_arm=on" /boot/config.txt; then
-            echo "dtparam=i2c_arm=on" | sudo tee -a /boot/config.txt > /dev/null
+    if [ -f "$config_file" ]; then
+        # Sprawdź czy I2C jest już włączone
+        if grep -q "overlays=.*i2c" "$config_file"; then
+            log "INFO" "I2C jest już włączone"
+        else
+            # Dwie możliwe metody, zależne od struktury pliku konfiguracyjnego
+            if grep -q "^overlays=" "$config_file"; then
+                # Dodaj I2C do istniejącej linii overlays
+                sudo sed -i 's/^overlays=\(.*\)/overlays=\1 i2c/' "$config_file"
+            else
+                # Dodaj nową linię dla overlays
+                echo "overlays=i2c" | sudo tee -a "$config_file" > /dev/null
+            fi
+            log "SUCCESS" "I2C włączone. Wymagany restart, aby zastosować zmiany."
         fi
 
-        # Ensure I2C tools are installed
+        # Zainstaluj narzędzia I2C
+        log "INFO" "Instalacja narzędzi I2C..."
         sudo apt-get update
         sudo apt-get install -y i2c-tools
-
-        log "INFO" "I2C enabled. Reboot required to apply changes."
+        log "SUCCESS" "Narzędzia I2C zainstalowane"
     else
-        log "ERROR" "Cannot find /boot/config.txt"
+        log "ERROR" "Nie znaleziono odpowiedniego pliku konfiguracyjnego dla I2C"
         return 1
     fi
 }
 
-# Enable Serial
+# Enable UART/Serial
 enable_serial() {
-    log "INFO" "Configuring Serial..."
+    log "INFO" "Konfiguracja UART/Serial..."
 
-    # Check if already enabled
-    if grep -q "^enable_uart=1" /boot/config.txt; then
-        log "INFO" "Serial is already enabled"
-        return 0
+    # Konfiguracja przez overlays (metoda dla Radxa)
+    local config_file="/boot/uEnv.txt"
+
+    if [ ! -f "$config_file" ]; then
+        log "WARN" "Plik $config_file nie istnieje. Spróbuję użyć /boot/config.txt"
+        config_file="/boot/config.txt"
     fi
 
-    # Enable Serial
-    if [ -f /boot/config.txt ]; then
-        sudo sed -i 's/^#enable_uart=1/enable_uart=1/' /boot/config.txt
-        if ! grep -q "^enable_uart=1" /boot/config.txt; then
-            echo "enable_uart=1" | sudo tee -a /boot/config.txt > /dev/null
+    if [ -f "$config_file" ]; then
+        # Sprawdź czy UART jest już włączone
+        if grep -q "overlays=.*uart" "$config_file"; then
+            log "INFO" "UART jest już włączone"
+        else
+            # Dwie możliwe metody, zależne od struktury pliku konfiguracyjnego
+            if grep -q "^overlays=" "$config_file"; then
+                # Dodaj UART do istniejącej linii overlays
+                sudo sed -i 's/^overlays=\(.*\)/overlays=\1 uart/' "$config_file"
+            else
+                # Dodaj nową linię dla overlays
+                echo "overlays=uart" | sudo tee -a "$config_file" > /dev/null
+            fi
+            log "SUCCESS" "UART włączone. Wymagany restart, aby zastosować zmiany."
         fi
-        log "INFO" "Serial enabled. Reboot required to apply changes."
     else
-        log "ERROR" "Cannot find /boot/config.txt"
+        log "ERROR" "Nie znaleziono odpowiedniego pliku konfiguracyjnego dla UART"
         return 1
     fi
 }
 
-# Configure 1-Wire
-enable_1wire() {
-    log "INFO" "Configuring 1-Wire..."
+# Enable audio (I2S)
+enable_i2s_audio() {
+    log "INFO" "Konfiguracja I2S dla audio..."
 
-    # Check if already enabled
-    if grep -q "^dtoverlay=w1-gpio" /boot/config.txt; then
-        log "INFO" "1-Wire is already enabled"
-        return 0
+    # Konfiguracja przez overlays (metoda dla Radxa)
+    local config_file="/boot/uEnv.txt"
+
+    if [ ! -f "$config_file" ]; then
+        log "WARN" "Plik $config_file nie istnieje. Spróbuję użyć /boot/config.txt"
+        config_file="/boot/config.txt"
     fi
 
-    # Enable 1-Wire
-    if [ -f /boot/config.txt ]; then
-        echo "dtoverlay=w1-gpio" | sudo tee -a /boot/config.txt > /dev/null
-        log "INFO" "1-Wire enabled. Reboot required to apply changes."
+    if [ -f "$config_file" ]; then
+        # Sprawdź czy I2S jest już włączone
+        if grep -q "overlays=.*i2s" "$config_file"; then
+            log "INFO" "I2S jest już włączone"
+        else
+            # Dwie możliwe metody, zależne od struktury pliku konfiguracyjnego
+            if grep -q "^overlays=" "$config_file"; then
+                # Dodaj I2S do istniejącej linii overlays
+                sudo sed -i 's/^overlays=\(.*\)/overlays=\1 i2s/' "$config_file"
+            else
+                # Dodaj nową linię dla overlays
+                echo "overlays=i2s" | sudo tee -a "$config_file" > /dev/null
+            fi
+            log "SUCCESS" "I2S włączone. Wymagany restart, aby zastosować zmiany."
+        fi
+
+        # Zainstaluj narzędzia audio
+        log "INFO" "Instalacja narzędzi audio..."
+        sudo apt-get update
+        sudo apt-get install -y alsa-utils
+        log "SUCCESS" "Narzędzia audio zainstalowane"
     else
-        log "ERROR" "Cannot find /boot/config.txt"
+        log "ERROR" "Nie znaleziono odpowiedniego pliku konfiguracyjnego dla I2S"
         return 1
     fi
 }
 
-# Full configuration
-configure_raspberry_pi() {
-    # Ensure running as non-root user
+# Pełna konfiguracja
+configure_radxa() {
+    # Upewnij się, że nie jest uruchomiony jako root
     if [ "$EUID" -eq 0 ]; then
-        log "ERROR" "Do not run this script as root. Use sudo if needed."
+        log "ERROR" "Nie uruchamiaj tego skryptu jako root. Użyj sudo, gdy będzie potrzebne."
         return 1
     fi
 
-    # Check if running on Raspberry Pi
-    check_raspberry_pi || return 1
+    # Sprawdź czy uruchomiony na Radxa
+    check_radxa || return 1
 
-    # Perform configurations
+    # Wykonaj konfiguracje
     enable_ssh
     enable_spi
     enable_i2c
     enable_serial
-    enable_1wire
+    enable_i2s_audio
 
-    # Suggest reboot
-    log "WARN" "Reboot recommended to apply all changes"
-    echo "Suggested reboot command: sudo reboot"
+    # Sugestia restartu
+    log "WARN" "Zalecany restart, aby zastosować wszystkie zmiany"
+    echo "Sugerowana komenda restartu: sudo reboot"
 }
 
-# Display help
+# Wyświetl pomoc
 display_help() {
-    echo "Raspberry Pi Configuration Utility"
-    echo "Usage:"
-    echo "  $0 [option]"
+    echo "Radxa Zero 3W/3E - Narzędzie konfiguracyjne"
+    echo "Użycie:"
+    echo "  $0 [opcja]"
     echo ""
-    echo "Options:"
-    echo "  ssh     - Enable SSH"
-    echo "  spi     - Enable SPI"
-    echo "  i2c     - Enable I2C"
-    echo "  serial  - Enable Serial"
-    echo "  1wire   - Enable 1-Wire"
-    echo "  all     - Configure all interfaces (default)"
-    echo "  help    - Display this help message"
+    echo "Opcje:"
+    echo "  ssh     - Włącz SSH"
+    echo "  spi     - Włącz SPI"
+    echo "  i2c     - Włącz I2C"
+    echo "  serial  - Włącz UART/Serial"
+    echo "  i2s     - Włącz I2S audio"
+    echo "  all     - Skonfiguruj wszystkie interfejsy (domyślnie)"
+    echo "  help    - Wyświetl tę pomoc"
 }
 
-# Main script execution
+# Główna funkcja
 main() {
-    # Determine action
+    # Określ akcję
     local action="${1:-all}"
 
     case "$action" in
         "ssh")
-            check_raspberry_pi && enable_ssh
+            check_radxa && enable_ssh
             ;;
         "spi")
-            check_raspberry_pi && enable_spi
+            check_radxa && enable_spi
             ;;
         "i2c")
-            check_raspberry_pi && enable_i2c
+            check_radxa && enable_i2c
             ;;
         "serial")
-            check_raspberry_pi && enable_serial
+            check_radxa && enable_serial
             ;;
-        "1wire")
-            check_raspberry_pi && enable_1wire
+        "i2s")
+            check_radxa && enable_i2s_audio
             ;;
         "all")
-            configure_raspberry_pi
+            configure_radxa
             ;;
         "help")
             display_help
             ;;
         *)
-            log "ERROR" "Invalid option"
+            log "ERROR" "Nieprawidłowa opcja"
             display_help
             return 1
             ;;
     esac
 }
 
-# Run main with all arguments
+# Uruchom główną funkcję z wszystkimi argumentami
 main "$@"
