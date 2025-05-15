@@ -156,7 +156,331 @@ from rpi_stt_tts_shell import VoiceAssistant
 # Inicjalizacja z domyślną konfiguracją
 assistant = VoiceAssistant()
 
-# Inicjalizacja z własną# Dokumentacja skryptów scan.sh i deploy.sh
+# Inicjalizacja z własną konfiguracją
+assistant = VoiceAssistant(config_path='my_config.json')
+
+# Uruchomienie asystenta
+assistant.start()
+```
+
+### Dodawanie własnych komend
+
+```python
+from rpi_stt_tts_shell import VoiceAssistant, Command
+
+assistant = VoiceAssistant()
+
+# Dodawanie prostej komendy
+@assistant.command("powiedz cześć")
+def say_hello(assistant):
+    assistant.speak("Cześć, miło Cię poznać!")
+
+# Dodawanie komendy z parametrami
+@assistant.command("ustaw minutnik na {minutes} minut")
+def set_timer(assistant, minutes):
+    # Konwersja na liczbę
+    mins = int(minutes)
+    assistant.speak(f"Ustawiam minutnik na {mins} minut")
+    # Logika minutnika...
+
+# Uruchomienie asystenta
+assistant.start()
+```
+
+### Obsługa GPIO
+
+```python
+from rpi_stt_tts_shell import VoiceAssistant, GPIOController
+
+assistant = VoiceAssistant()
+gpio = GPIOController()
+
+# Konfiguracja pinów
+gpio.setup(17, gpio.OUT)  # LED
+gpio.setup(18, gpio.OUT)  # Wentylator
+
+@assistant.command("włącz światło")
+def light_on(assistant):
+    gpio.output(17, gpio.HIGH)
+    assistant.speak("Światło włączone")
+
+@assistant.command("wyłącz światło")
+def light_off(assistant):
+    gpio.output(17, gpio.LOW)
+    assistant.speak("Światło wyłączone")
+
+assistant.start()
+```
+
+### Obsługa czujników
+
+```python
+from rpi_stt_tts_shell import VoiceAssistant, DHT22Sensor
+
+assistant = VoiceAssistant()
+sensor = DHT22Sensor(pin=4)
+
+@assistant.command("jaka jest temperatura")
+def get_temperature(assistant):
+    temp = sensor.get_temperature()
+    assistant.speak(f"Aktualna temperatura wynosi {temp:.1f} stopni Celsjusza")
+
+@assistant.command("jaka jest wilgotność")
+def get_humidity(assistant):
+    humidity = sensor.get_humidity()
+    assistant.speak(f"Aktualna wilgotność wynosi {humidity:.1f} procent")
+
+assistant.start()
+```
+
+## Narzędzia wdrożeniowe
+
+### scan.sh - Skaner Raspberry Pi
+
+Skrypt `scan.sh` skanuje sieć lokalną, wykrywa urządzenia Raspberry Pi i zapisuje informacje o nich do pliku CSV.
+
+#### Opcje:
+- `-r, --range RANGE` - skanuj podany zakres sieci (np. 192.168.1.0/24)
+- `-o, --output FILE` - zapisz wyniki do podanego pliku CSV (domyślnie: raspberry_pi_devices.csv)
+- `-h, --help` - wyświetl pomoc
+
+#### Przykłady użycia:
+```bash
+# Standardowe użycie (automatyczne wykrywanie sieci)
+./scan.sh
+
+# Skanowanie konkretnego zakresu sieci
+./scan.sh -r 10.0.0.0/24
+
+# Zapisanie wyników do niestandardowego pliku
+./scan.sh -o moje_urzadzenia.csv
+```
+
+### deploy.sh - Wdrażanie projektu
+
+Skrypt `deploy.sh` służy do automatycznego wdrażania, testowania i logowania projektu na urządzeniach Raspberry Pi wykrytych przez skrypt `scan.sh`.
+
+#### Opcje:
+- `-f, --file FILE` - użyj podanego pliku CSV z urządzeniami (domyślnie: raspberry_pi_devices.csv)
+- `-u, --user USER` - użyj podanej nazwy użytkownika SSH (domyślnie: pi)
+- `-p, --password PASS` - użyj podanego hasła SSH (domyślnie: raspberry)
+- `-d, --dir DIR` - użyj podanego katalogu projektu (domyślnie: project_files)
+- `-r, --remote-dir DIR` - użyj podanego katalogu zdalnego (domyślnie: /home/pi/deployed_project)
+- `-i, --ip IP` - wdróż tylko na konkretne urządzenie o podanym IP
+- `-h, --help` - wyświetl pomoc
+
+#### Przykłady użycia:
+```bash
+# Standardowe użycie (wdrożenie na wszystkie urządzenia z pliku CSV)
+./deploy.sh
+
+# Wdrożenie z niestandardowymi parametrami
+./deploy.sh -u admin -p tajnehaslo -d ~/moj_projekt -r /opt/aplikacja
+
+# Wdrożenie tylko na jedno urządzenie
+./deploy.sh -i 192.168.1.100
+```
+
+### test_script.sh - Testowanie projektu
+
+Skrypt `test_script.sh` jest uruchamiany na zdalnych urządzeniach po wdrożeniu projektu i wykonuje serię testów, aby upewnić się, że wszystko działa prawidłowo.
+
+#### Funkcje testowe:
+- Testy systemowe (wersja Raspberry Pi OS, model, połączenie internetowe)
+- Testy zależności systemowych (Python, biblioteki)
+- Testy struktury projektu (obecność plików i katalogów)
+- Testy portów i usług
+- Testy specyficzne dla projektu
+
+### Makefile - Automatyzacja zadań
+
+Plik `Makefile` zawiera zestaw zadań automatyzujących typowe operacje związane z rozwojem i wdrażaniem projektu.
+
+#### Główne cele:
+- `install` - instalacja projektu lokalnie
+- `scan` - skanowanie sieci w poszukiwaniu urządzeń Raspberry Pi
+- `deploy` - wdrażanie projektu na wykryte urządzenia
+- `test` - uruchamianie testów lokalnie
+- `docs` - generowanie dokumentacji
+- `run` - uruchamianie aplikacji
+- `clean` - czyszczenie plików tymczasowych
+- `help` - wyświetlenie dostępnych celów
+
+## Rozwiązywanie problemów
+
+### Problem z rozpoznawaniem mowy
+- Upewnij się, że mikrofon jest prawidłowo podłączony
+- Sprawdź poziom głośności mikrofonu w systemie: `alsamixer`
+- Przetestuj mikrofon: `arecord -d 5 test.wav && aplay test.wav`
+- Spróbuj inny silnik STT w konfiguracji
+
+### Czujnik DHT nie działa
+- Sprawdź podłączenie przewodów
+- Upewnij się, że biblioteka ma wymagane uprawnienia (uruchom z sudo)
+- Zainstaluj wymagane pakiety: `sudo apt-get install libgpiod2`
+
+### Błędy związane z GPIO
+- Uruchom aplikację z uprawnieniami administratora: `sudo rpi-stt-tts-shell`
+- Sprawdź, czy piny są prawidłowo skonfigurowane w pliku config.json
+- Użyj `gpio readall` do sprawdzenia stanu pinów
+
+### Problemy z syntezą mowy
+- Sprawdź, czy głośnik jest podłączony i działa: `speaker-test -t wav`
+- Upewnij się, że zainstalowano wymagane pakiety: `sudo apt-get install espeak`
+- Dostosuj głośność w pliku konfiguracyjnym
+
+### Problemy z wdrażaniem
+- Upewnij się, że urządzenia docelowe są dostępne w sieci
+- Sprawdź, czy dane logowania SSH są poprawne
+- Przejrzyj logi wdrożenia w katalogu `deployment_logs/`
+
+## Funkcje zaawansowane
+
+### System wtyczek
+
+Asystent może być rozszerzony o dodatkowe funkcje poprzez system wtyczek:
+
+```python
+# plugins/weather.py
+from rpi_stt_tts_shell import Plugin
+
+class WeatherPlugin(Plugin):
+    def __init__(self, assistant):
+        super().__init__(assistant)
+        self.name = "weather"
+        self.register_commands()
+    
+    def register_commands(self):
+        self.register_command("jaka jest pogoda", self.get_weather)
+        self.register_command("jaka będzie pogoda jutro", self.get_forecast)
+    
+    def get_weather(self, _):
+        # Implementacja sprawdzania pogody
+        self.assistant.speak("Obecnie jest słonecznie, 22 stopnie Celsjusza")
+    
+    def get_forecast(self, _):
+        # Implementacja prognozy
+        self.assistant.speak("Jutro będzie pochmurno z przejaśnieniami, 19 stopni Celsjusza")
+
+# Rejestracja wtyczki w głównym pliku
+from rpi_stt_tts_shell import VoiceAssistant
+from plugins.weather import WeatherPlugin
+
+assistant = VoiceAssistant()
+assistant.register_plugin(WeatherPlugin(assistant))
+assistant.start()
+```
+
+### Integracja z systemami domowymi
+
+Asystent może być zintegrowany z popularnymi systemami automatyki domowej:
+
+```python
+# Integracja z MQTT (np. dla Home Assistant)
+from rpi_stt_tts_shell import VoiceAssistant
+import paho.mqtt.client as mqtt
+
+assistant = VoiceAssistant()
+mqtt_client = mqtt.Client()
+mqtt_client.connect("192.168.1.10", 1883, 60)
+mqtt_client.loop_start()
+
+@assistant.command("włącz światło w salonie")
+def living_room_light_on(assistant):
+    mqtt_client.publish("home/livingroom/light", "ON")
+    assistant.speak("Włączam światło w salonie")
+
+@assistant.command("wyłącz światło w salonie")
+def living_room_light_off(assistant):
+    mqtt_client.publish("home/livingroom/light", "OFF")
+    assistant.speak("Wyłączam światło w salonie")
+
+assistant.start()
+```
+
+## Przykłady użycia
+
+### Prosty asystent głosowy
+
+```python
+# Minimalny przykład asystenta głosowego
+from rpi_stt_tts_shell import VoiceAssistant
+
+assistant = VoiceAssistant()
+
+@assistant.command("która godzina")
+def tell_time(assistant):
+    from datetime import datetime
+    current_time = datetime.now().strftime("%H:%M")
+    assistant.speak(f"Aktualna godzina to {current_time}")
+
+@assistant.command("dzisiejsza data")
+def tell_date(assistant):
+    from datetime import datetime
+    current_date = datetime.now().strftime("%d %B %Y")
+    assistant.speak(f"Dzisiejsza data to {current_date}")
+
+assistant.start()
+```
+
+### Sterowanie oświetleniem
+
+```python
+# Sterowanie oświetleniem przez GPIO
+from rpi_stt_tts_shell import VoiceAssistant, GPIOController
+
+assistant = VoiceAssistant()
+gpio = GPIOController()
+
+# Konfiguracja pinów dla różnych świateł
+LIGHTS = {
+    "salon": 17,
+    "kuchnia": 18,
+    "sypialnia": 27,
+    "łazienka": 22
+}
+
+# Inicjalizacja pinów
+for pin in LIGHTS.values():
+    gpio.setup(pin, gpio.OUT)
+    gpio.output(pin, gpio.LOW)  # Wyłącz wszystkie światła na początku
+
+# Dynamiczne tworzenie komend dla każdego światła
+for room, pin in LIGHTS.items():
+    @assistant.command(f"włącz światło w {room}")
+    def light_on(assistant, room=room, pin=pin):
+        gpio.output(pin, gpio.HIGH)
+        assistant.speak(f"Włączam światło w {room}")
+    
+    @assistant.command(f"wyłącz światło w {room}")
+    def light_off(assistant, room=room, pin=pin):
+        gpio.output(pin, gpio.LOW)
+        assistant.speak(f"Wyłączam światło w {room}")
+
+# Komenda do wyłączenia wszystkich świateł
+@assistant.command("wyłącz wszystkie światła")
+def all_lights_off(assistant):
+    for pin in LIGHTS.values():
+        gpio.output(pin, gpio.LOW)
+    assistant.speak("Wyłączam wszystkie światła")
+
+assistant.start()
+```
+
+## Zasoby dodatkowe
+
+### Dokumentacja API
+Pełna dokumentacja API jest dostępna w katalogu `docs/` projektu.
+
+### Przykłady
+Przykłady użycia znajdują się w katalogu `examples/` projektu.
+
+### Wsparcie i zgłaszanie problemów
+Problemy można zgłaszać przez system Issue Tracker na GitHub.
+
+### Licencja
+Ten projekt jest dostępny na licencji MIT.
+# Dokumentacja skryptów scan.sh i deploy.sh
 
 ## Wprowadzenie
 
@@ -341,86 +665,3 @@ Skrypt testowy można dostosować do konkretnego projektu, dodając lub modyfiku
 - Skrypty są skonfigurowane do pracy z domyślnym użytkownikiem Raspberry Pi (`pi` z hasłem `raspberry`). W środowisku produkcyjnym zalecane jest użycie kluczy SSH zamiast haseł.
 - Przed wdrożeniem w środowisku produkcyjnym, zalecane jest przetestowanie skryptów w środowisku testowym.
 - Raport HTML zawiera szczegółowe informacje o procesie wdrażania i może być przydatny do diagnostyki problemów.
-
-
-
-## Rozwiązywanie problemów
-
-### Problemy z pamięcią na Pi Zero v2
-
-Jeśli występują problemy z pamięcią podczas instalacji dużych pakietów:
-
-```bash
-# Zwiększenie przestrzeni swap
-sudo dphys-swapfile swapoff
-sudo sed -i 's/CONF_SWAPSIZE=.*/CONF_SWAPSIZE=1024/' /etc/dphys-swapfile
-sudo dphys-swapfile setup
-sudo dphys-swapfile swapon
-```
-
-### Problemy z kompilacją pakietów natywnych
-
-Dla pakietów wymagających kompilacji:
-
-```bash
-sudo apt-get install -y build-essential libssl-dev libffi-dev python3-dev
-```
-
-### Synchronizacja zależności
-
-W przypadku niespójności zależności:
-
-```bash
-poetry lock --no-update  # Regeneracja pliku lock bez aktualizacji
-```
-
-## Przykładowe projekty
-
-### Monitoring temperatury i wilgotności
-
-```python
-#!/usr/bin/env python3
-import time
-import board
-import adafruit_dht
-
-# Inicjalizacja czujnika DHT22 na pinie D4
-dht = adafruit_dht.DHT22(board.D4)
-
-while True:
-    try:
-        # Odczyt temperatury i wilgotności
-        temperatura = dht.temperature
-        wilgotnosc = dht.humidity
-        
-        print(f"Temperatura: {temperatura}°C, Wilgotność: {wilgotnosc}%")
-        
-    except RuntimeError as e:
-        # Błędy odczytu są dość częste, je ignorujemy
-        print(f"Błąd odczytu: {e}")
-    
-    time.sleep(2)  # Odczyt co 2 sekundy
-```
-
-Plik `pyproject.toml` dla tego projektu:
-
-```toml
-[tool.poetry]
-name = "monitor-dht"
-version = "0.1.0"
-description = "Monitoring czujnika DHT22"
-authors = ["Twoje Imię <twoj.email@example.com>"]
-
-[tool.poetry.dependencies]
-python = "^3.7"
-adafruit-blinka = "^8.19.0"
-adafruit-circuitpython-dht = "^3.7.8"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-```
-
----
-
-*Dokumentacja przygotowana: 15 maja 2025*
